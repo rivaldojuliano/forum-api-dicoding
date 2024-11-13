@@ -4,6 +4,7 @@ const ThreadsTableTestHelper = require('../../../../tests/ThreadsTableTestHelper
 const UsersTableTestHelper = require('../../../../tests/UsersTableTestHelper');
 const pool = require('../../database/postgres/pool');
 const ThreadRepositoryPostgres = require('../ThreadRepositoryPostgres');
+const NotFoundError = require('../../../Commons/exceptions/NotFoundError');
 
 describe('ThreadRepositoryPostgres', () => {
   afterEach(async () => {
@@ -58,6 +59,28 @@ describe('ThreadRepositoryPostgres', () => {
         title: newThread.title,
         owner: newThread.owner,
       }));
+    });
+  });
+
+  describe('verifyThreadExists', () => {
+    it('should throw Invariant when thread not exists', async () => {
+      const threadRepositoryPostgres = new ThreadRepositoryPostgres(pool, {});
+
+      await expect(threadRepositoryPostgres.verifyThreadExists('xxxx')).rejects.toThrowError(NotFoundError);
+    });
+
+    it('should not throw InvariantError when thread exists', async () => {
+      await UsersTableTestHelper.addUser({
+        username: 'rivaldojuliano',
+      });
+
+      await ThreadsTableTestHelper.addThread({
+        title: 'Lorem ipsum',
+      });
+
+      const threadRepositoryPostgres = new ThreadRepositoryPostgres(pool, {});
+
+      await expect(threadRepositoryPostgres.verifyThreadExists('thread-123')).resolves.not.toThrowError(NotFoundError);
     });
   });
 });
